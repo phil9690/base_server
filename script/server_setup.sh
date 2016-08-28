@@ -1,16 +1,24 @@
 # CENTOS 7 server setup
 
 # Create user
-adduser username
+echo "******INITIAL SERVER SETUP******"
+echo "******ADMIN USER CREATION*******"
+echo "Type the admin username"
+read user
+
+adduser $user
 
 # Set user password
-passwd username
+echo "Set the password for $user"
+read password
+
+passwd $password
 
 # Give user admin privildges
-gpasswd -a username wheel
+gpasswd -a $user wheel
 
 # Switch to new user
-su - username
+su - $user
 
 # Set up ssh keys
 # Make ssh directory on new user
@@ -22,6 +30,11 @@ chmod 700 .ssh
 touch .ssh/authorized_keys
 
 # Get user to paste output of cat .ssh/id_rsa.pub from their machine
+echo "Copy your local machines ssh key with the following command"
+echo "cat .ssh/id_rsa.pub"
+echo "and copy the output below:"
+read sshkey
+
 
 # Restrict authorized keys file
 chmod 600 .ssh/authorized_keys
@@ -30,17 +43,29 @@ chmod 600 .ssh/authorized_keys
 exit
 
 # Configure ssh daemon
-vi /etc/ssh/sshd_config
+#vi /etc/ssh/sshd_config
 
 # Change
 # PermitRootLogin yes
 # MaxAuthTries = 6
 #to
-PermitRootLogin no
-MaxAuthTries = 3
+#PermitRootLogin no
+#MaxAuthTries = 3
+
+sed 's/#\?\(PermitRootLogin\s*\).*$/\1 no/' /etc/ssh/sshd_config > temp.txt
+mv -f temp.txt /etc/ssh/sshd_config
+sed 's/#\?\(MaxAuthTries\s*\).*$/\1 3/' /etc/ssh/sshd_config > temp.txt
+mv -f temp.txt /etc/ssh/sshd_config
 
 # Restart ssh
 systemctl reload sshd
+
+# Get ip address
+ipaddress=$(ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1')
+
+echo "Logging out of root..."
+echo "Log back in with the following command:"
+echo "ssh $user@$ipaddress"
 
 # Logout of root
 exit
@@ -140,6 +165,9 @@ gem install bundler
 # install rails
 gem install rails
 
+#install shims for all Ruby executables known to rbenv, which will allow you to use the executables.
+rbenv rehash
+
 # install nodejs
 yum -y install epel-release
 yum -y install nodejs
@@ -151,4 +179,10 @@ systemctl enable mariadb
 # run mysql secure install script
 mysql_secure_installation
 
+#install mysql gem
+gem install mysql2
+
+rbenv rehash
+
+#installing passenger and nginx
 
