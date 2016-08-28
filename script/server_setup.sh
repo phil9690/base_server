@@ -1,46 +1,14 @@
+#!/bin/bash
+
 # CENTOS 7 server setup
 
-# Create user
-echo "******INITIAL SERVER SETUP******"
-echo "******ADMIN USER CREATION*******"
-echo "Type the admin username"
-read user
+# If root create initial user
 
-adduser $user
-
-# Set user password
-echo "Set the password for $user"
-read password
-
-passwd $password
-
-# Give user admin privildges
-gpasswd -a $user wheel
-
-# Switch to new user
-su - $user
-
-# Set up ssh keys
-# Make ssh directory on new user
-mkdir .ssh
-# Restrict folder permissions
-chmod 700 .ssh
-
-# Create authorized keys file
-touch .ssh/authorized_keys
-
-# Get user to paste output of cat .ssh/id_rsa.pub from their machine
-echo "Copy your local machines ssh key with the following command"
-echo "cat .ssh/id_rsa.pub"
-echo "and copy the output below:"
-read sshkey
-
-
-# Restrict authorized keys file
-chmod 600 .ssh/authorized_keys
-
-# Return to root user
-exit
+if [ $(id -u) = 0 ]; then
+  source ~/base_server/script/create_admin.sh
+else
+  source ~/base_server/script/ssh_setup.sh
+fi
 
 # Configure ssh daemon
 #vi /etc/ssh/sshd_config
@@ -53,9 +21,10 @@ exit
 #MaxAuthTries = 3
 
 sed 's/#\?\(PermitRootLogin\s*\).*$/\1 no/' /etc/ssh/sshd_config > temp.txt
-mv -f temp.txt /etc/ssh/sshd_config
+sudo sh -c "mv -f temp.txt /etc/ssh/sshd_config"
+
 sed 's/#\?\(MaxAuthTries\s*\).*$/\1 3/' /etc/ssh/sshd_config > temp.txt
-mv -f temp.txt /etc/ssh/sshd_config
+sudo sh -c "mv -f temp.txt /etc/ssh/sshd_config"
 
 # Restart ssh
 systemctl reload sshd
@@ -69,9 +38,6 @@ echo "ssh $user@$ipaddress"
 
 # Logout of root
 exit
-
-# Log in as the new user that was set up using
-ssh username@ipaddress
 
 # Setting up the firewall - USE IPTABLES
 
