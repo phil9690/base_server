@@ -8,9 +8,7 @@ adduser $user
 
 # Set user password
 echo "Set the password for $user"
-read password
-
-passwd $password
+passwd
 
 # Give user admin privildges
 gpasswd -a $user wheel
